@@ -1,5 +1,5 @@
 [project]
-name = "llmops-databricks-course-j-n-t"
+name = "arxiv_curator"
 dynamic = ["version"]
 description = "llmops-databricks-course-j-n-t - LLMOps Course on Databricks"
 requires-python = ">=3.12, <3.13"
@@ -48,7 +48,7 @@ build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]
 where = ["src"]
-include = ["your_custom_package*"]
+include = ["arxiv_curator*"]
 
 [tool.setuptools.dynamic]
 version = { file = "version.txt" }
