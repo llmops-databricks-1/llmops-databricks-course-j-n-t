@@ -82,7 +82,7 @@ response = client.chat.completions.create(
     model=model_name,
     messages=[
         {"role": "system", "content": "You are a helpful AI assistant."},
-        {"role": "user", "content": "Explain LLMOps in 3 sentences."}
+        {"role": "user", "content": "Give me the 3 main differences between MLOps and LLMOps in less than 200 tokens."}
     ],
     max_tokens=200,
      # Temperature ontrols randomness: 0.0 = deterministic, 1.0 = more creative/random
