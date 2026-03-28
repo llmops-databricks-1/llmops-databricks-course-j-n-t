@@ -61,6 +61,7 @@ pythonpath = ["."]
 [tool.ruff]
 line-length = 90
 
+[tool.ruff.lint]
 select = [
     "F",    # pyflakes rules
     "E",    # pycodestyle error rules
@@ -80,10 +81,10 @@ ignore = [
     "D213",   # multi-line-summary-second-line
     "C901",   # too complex
     "ERA001", # commented out code
-    "ANN204",
-    "ANN102",
-    "ANN101"
+    "ANN204"
 ]
+
+per-file-ignores = { "notebooks/*.py" = ["E501", "F821"] } # ignore Line too long (E501) and Undefined name (F821) for notebooks
 
 [tool.ruff.format]
 indent-style = "space"
