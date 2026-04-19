@@ -9,10 +9,13 @@
 # MAGIC - Vector Search MCP
 # MAGIC - Genie Space MCP
 # MAGIC - Creating MCP tools for agents
+
 # COMMAND ----------
 
 import asyncio
 import json
+import time
+from typing import Any
 
 import nest_asyncio
 from databricks.sdk import WorkspaceClient
@@ -22,12 +25,13 @@ from openai import OpenAI
 from pyspark.sql import SparkSession
 
 from arxiv_curator.config import get_env, load_config
-from arxiv_curator.mcp import create_mcp_tools
+from arxiv_curator.mcp import ToolInfo, create_mcp_tools
 
 # Enable nested event loops (required for Databricks notebooks)
 nest_asyncio.apply()
 
 # COMMAND ----------
+
 spark = SparkSession.builder.getOrCreate()
 
 # Load configuration
@@ -243,6 +247,104 @@ for i, tool in enumerate(mcp_tools, 1):
 
 # COMMAND ----------
 
+
+# ------------------------------------------------------------
+# 1. Add the Genie wrapper exec function
+# ------------------------------------------------------------
+def genie_query_exec_fn(query: str) -> Any:
+    client = DatabricksMCPClient(
+        server_url=f"{host}/api/2.0/mcp/genie/{cfg.genie_space_id}", workspace_client=w
+    )
+
+    # 1. Start the query
+    start = client.call_tool(
+        "query_space_01f13c0baa971196b99d2cd3e2e91214", {"query": query}
+    )
+    conv_id = start.json["conversation_id"]
+    msg_id = start.json["message_id"]
+
+    while True:
+        poll = client.call_tool(
+            "poll_response_01f13c0baa971196b99d2cd3e2e91214",
+            {"conversation_id": conv_id, "message_id": msg_id},
+        )
+
+        if poll.json.get("status") == "completed":
+            for c in poll.content:
+                # 1. Table or JSON result
+                if getattr(c, "json", None):
+                    j = c.json
+                    if isinstance(j, dict) and (
+                        "columns" in j or "rows" in j or "table" in j
+                    ):
+                        return j
+
+                # 2. Text result (markdown table or summary)
+                if getattr(c, "text", None):
+                    text = c.text.strip()
+
+                    # Skip SQL echoes
+                    if text.lower().startswith(("select", "describe", "pragma", "with")):
+                        continue
+                    if "genie_query" in text:
+                        continue
+
+                    if text:
+                        return text
+
+                # 3. Binary data
+                if getattr(c, "data", None):
+                    return c.data
+
+            # Only SQL echoes so far → keep polling
+            time.sleep(1)
+            continue
+
+        # Not completed yet → keep polling
+        time.sleep(1)
+
+
+# ------------------------------------------------------------
+# 2. Register the wrapper tool
+# ------------------------------------------------------------
+genie_wrapper_tool = ToolInfo(
+    name="genie_query",
+    spec={
+        "type": "function",
+        "function": {
+            "name": "genie_query",
+            "description": "Run SQL queries against the Genie Space datasets. "
+            "Use this tool ONLY when the user explicitly asks for SQL, tables, schema, "
+            "database inspection, or structured data queries. ",
+            "parameters": {
+                "type": "object",
+                "properties": {"query": {"type": "string"}},
+                "required": ["query"],
+            },
+        },
+    },
+    exec_fn=lambda **kwargs: genie_query_exec_fn(kwargs["query"]),
+)
+
+mcp_tools.append(genie_wrapper_tool)
+
+
+# ------------------------------------------------------------
+# 3. Remove the raw Genie tools (the model cannot use them)
+# ------------------------------------------------------------
+mcp_tools = [
+    t
+    for t in mcp_tools
+    if not t.name.startswith("query_space_") and not t.name.startswith("poll_response_")
+]
+
+logger.info(f"✓ Loaded {len(mcp_tools)} tools from MCP servers")
+logger.info("Available Tools:")
+for i, tool in enumerate(mcp_tools, 1):
+    logger.info(f"{i}. {tool.name}")
+
+# COMMAND ----------
+
 # MAGIC %md
 # MAGIC ## 7. Using MCP Tools
 
@@ -348,6 +450,12 @@ def test_mcp_connection(mcp_url: str) -> bool:
 # Test Vector Search MCP
 logger.info("Testing Vector Search MCP:")
 test_mcp_connection(vector_search_mcp_url)
+
+# COMMAND ----------
+
+# Test Genie Space MCP
+logger.info("Testing Genie Space MCP:")
+test_mcp_connection(genie_mcp_url)
 
 # COMMAND ----------
 
@@ -461,4 +569,16 @@ logger.info("Testing agent with MCP tools:")
 logger.info("=" * 80)
 
 response = agent.chat("Find papers about transformer architectures")
+logger.info(f"Agent response: {response}")
+
+# COMMAND ----------
+
+# using the original 2 tools for the genie space
+response = agent.chat("Tell me about the contents of the arxiv_papers table.")
+logger.info(f"Agent response: {response}")
+
+# COMMAND ----------
+
+# using a wrapper function to combine the 2 tools
+response = agent.chat("Tell me about the contents of the arxiv_papers table.")
 logger.info(f"Agent response: {response}")
