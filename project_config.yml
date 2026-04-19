@@ -2,14 +2,17 @@
 
 # Development environment
 dev:
-  catalog: llmops_dev
-  schema: arxiv
+  #catalog: llmops_dev # Databricks Free Edition
+  catalog: mlops_dev
+  #schema: arxiv # Databricks Free Edition
+  schema: joaontor
   volume: arxiv_files
   llm_endpoint: databricks-llama-4-maverick
   embedding_endpoint: databricks-gte-large-en
   warehouse_id: 7077f4cb0e616c62
   vector_search_endpoint: llmops_course_vs_endpoint
-  genie_space_id: 01f13752501d170c8bd8b67cc2e6b5b9
+  #genie_space_id: 01f13752501d170c8bd8b67cc2e6b5b9 # Databricks Free Edition
+  genie_space_id: 01f13c0baa971196b99d2cd3e2e91214
   usage_policy_id: 7dde2fae-0d6a-4c7c-aa36-85d95ffbdce0
 
 # Acceptance/Staging environment
@@ -21,7 +24,8 @@ acc:
   embedding_endpoint: databricks-gte-large-en
   warehouse_id: 7077f4cb0e616c62
   vector_search_endpoint: llmops_course_vs_endpoint
-  genie_space_id: 01f13752501d170c8bd8b67cc2e6b5b9
+  # genie_space_id: 01f13752501d170c8bd8b67cc2e6b5b9 # Databricks Free Edition
+  genie_space_id: 01f13c0baa971196b99d2cd3e2e91214
   usage_policy_id: 7dde2fae-0d6a-4c7c-aa36-85d95ffbdce0
 
 # Production environment
@@ -33,7 +37,8 @@ prd:
   embedding_endpoint: databricks-gte-large-en
   warehouse_id: 7077f4cb0e616c62
   vector_search_endpoint: llmops_course_vs_endpoint
-  genie_space_id: 01f13752501d170c8bd8b67cc2e6b5b9
+  # genie_space_id: 01f13752501d170c8bd8b67cc2e6b5b9 # Databricks Free Edition
+  genie_space_id: 01f13c0baa971196b99d2cd3e2e91214
   usage_policy_id: 7dde2fae-0d6a-4c7c-aa36-85d95ffbdce0
 
 # Model configuration
