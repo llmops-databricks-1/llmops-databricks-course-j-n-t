@@ -89,7 +89,11 @@ ignore = [
     "ANN204"
 ]
 
-per-file-ignores = { "notebooks/*.py" = ["E501", "F821"] } # ignore Line too long (E501) and Undefined name (F821) for notebooks
+per-file-ignores = { "notebooks/*.py" = [
+    "E501",     # Line too long
+    "F821",     # Undefined name
+    "ANN401"    # Dinamyc typing in public APIs
+    ]}
 
 [tool.ruff.format]
 indent-style = "space"
